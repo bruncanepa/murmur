@@ -21,7 +21,7 @@ class SpeechRecognizer: ObservableObject {
     @Published var transcribedText: String = "" {
         didSet {
             // Detect if user manually edited the text
-            if isRecording && !isUpdatingFromRecognition {
+            if isRecording && !isUpdatingFromRecognition && !isRestartingAfterEdit {
                 // User edited while recording - restart the session
                 restartRecordingAfterEdit()
             }
@@ -42,6 +42,7 @@ class SpeechRecognizer: ObservableObject {
     private var speechRecognizer: SFSpeechRecognizer?
     private var isUpdatingFromRecognition: Bool = false // Flag to track programmatic updates
     private var baseText: String = "" // Base text that new recognition should append to
+    private var isRestartingAfterEdit: Bool = false // Flag to prevent multiple restart triggers
 
     init() {
         speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: currentLanguage.rawValue))
@@ -203,12 +204,45 @@ class SpeechRecognizer: ObservableObject {
     }
 
     private func restartRecordingAfterEdit() {
-        // Stop the current recording session
-        stopRecording()
+        // Set flag to prevent multiple restart triggers
+        isRestartingAfterEdit = true
 
-        // Restart after a brief delay to ensure cleanup is complete
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            self?.startRecording()
+        // Save the edited text before stopping
+        let editedText = transcribedText
+
+        // Cancel the current recognition task silently without stopping the audio engine
+        recognitionTask?.cancel()
+        recognitionTask = nil
+
+        // Stop audio engine properly
+        if let audioEngine = audioEngine {
+            if audioEngine.isRunning {
+                audioEngine.stop()
+            }
+            audioEngine.inputNode.removeTap(onBus: 0)
+        }
+
+        // End recognition request
+        recognitionRequest?.endAudio()
+        recognitionRequest = nil
+
+        // Set isRecording to false temporarily
+        isRecording = false
+
+        // Restore the edited text and restart after a brief delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+            guard let self = self else { return }
+
+            // Restore the edited text (this won't trigger didSet because isRecording is false)
+            self.isUpdatingFromRecognition = true
+            self.transcribedText = editedText
+            self.isUpdatingFromRecognition = false
+
+            // Start recording with the edited text as the base
+            self.startRecording()
+
+            // Clear the restart flag
+            self.isRestartingAfterEdit = false
         }
     }
 
