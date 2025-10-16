@@ -2,14 +2,16 @@
 
 A privacy-first voice dictation app for macOS that runs completely offline using native macOS Speech Recognition.
 
-## Phase 1: Core Features
+## Features
 
 - ✅ Menu bar app with system tray icon
-- ✅ Real-time speech-to-text using NSSpeechRecognizer
-- ✅ Global hotkey support (Cmd+Shift+Space)
-- ✅ Clipboard integration
-- ✅ Microphone and speech recognition permissions
+- ✅ Real-time speech-to-text using native macOS Speech Recognition
+- ✅ Press-and-hold recording with right Command (⌘) key
+- ✅ Auto-type transcribed text into any application
+- ✅ Editable transcription with automatic session restart
 - ✅ Multi-language support (English and Spanish)
+- ✅ Clipboard integration
+- ✅ 100% private - no internet required
 
 ## Building and Running
 
@@ -47,24 +49,44 @@ open Murmur.app
 On first launch, macOS will ask for permissions:
 1. **Microphone Access** - Required to capture your voice
 2. **Speech Recognition** - Required to transcribe speech
+3. **Accessibility** - Required to type into other applications (prompted when auto-type is enabled)
 
-Grant both permissions for the app to work.
+Grant all permissions for the app to work properly. After granting Accessibility permissions, you may need to restart the app.
 
 ## Usage
 
+### Quick Dictation (Recommended)
+
+1. Focus any text field in any application (email, document, browser, etc.)
+2. **Hold down the right Command (⌘) key** to start recording
+3. Speak naturally in your selected language
+4. **Release the right Command (⌘) key** to stop recording
+5. The transcribed text will automatically appear in your focused text field!
+
+### Manual Control
+
 1. Click the menu bar icon (waveform symbol) to open the control panel
-2. **Select your language** (English or Spanish) using the segmented control
-3. Click "Start" or press **Cmd+Shift+Space** to begin recording
-4. Speak naturally in your selected language
-5. Click "Stop" or press **Cmd+Shift+Space** again to end recording
-6. Click "Copy" to copy the transcribed text to clipboard
-7. Paste anywhere with Cmd+V
+2. **Select your language** (English or Spanish) from the dropdown
+3. **Toggle "Auto-type to active app"** to enable/disable automatic typing
+4. Click "Start" to begin recording (or use the hotkey)
+5. Speak naturally in your selected language
+6. The transcription appears in real-time and can be edited
+7. Click "Stop" to end recording
+8. With auto-type enabled: text is automatically typed into the previously active application
+9. With auto-type disabled: click "Copy" to copy text to clipboard, then paste anywhere
+
+### Advanced Features
+
+**Editing During Recording:**
+- You can click in the text field and manually edit the transcription while recording
+- The app will automatically stop and restart the recognition session, preserving your edits
+- New speech will continue after your edited text
 
 **Language Support:**
 - 🇺🇸 English (en-US)
 - 🇪🇸 Spanish (es-ES)
 
-Note: You cannot change language while recording is in progress.
+**Note:** Language and auto-type settings cannot be changed while recording is in progress.
 
 ## Privacy
 
@@ -94,20 +116,16 @@ Murmur is committed to being 100% private:
 
 ## Roadmap
 
-### Phase 2 (Future)
-- Direct text injection into applications (no copy/paste needed)
-- Accessibility API integration
-
-### Phase 3 (Future)
+### Future Enhancements
+- Additional language support
 - Local LLM integration for:
   - Filler word removal ("um", "uh", "like")
   - Auto-formatting and punctuation
   - Grammar improvements
-
-### Phase 4 (Future)
 - Personal dictionary for custom words/names
 - Voice shortcuts/snippets
 - Per-application preferences
+- Alternative speech recognition engines (whisper.cpp)
 
 ## Support
 
