@@ -18,7 +18,15 @@ enum RecognitionLanguage: String, CaseIterable {
 }
 
 class SpeechRecognizer: ObservableObject {
-    @Published var transcribedText: String = ""
+    @Published var transcribedText: String = "" {
+        didSet {
+            // Detect if user manually edited the text
+            if isRecording && !isUpdatingFromRecognition {
+                // User edited while recording - restart the session
+                restartRecordingAfterEdit()
+            }
+        }
+    }
     @Published var isRecording: Bool = false
     @Published var errorMessage: String?
     @Published var currentLanguage: RecognitionLanguage = .english {
@@ -32,6 +40,8 @@ class SpeechRecognizer: ObservableObject {
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private var speechRecognizer: SFSpeechRecognizer?
+    private var isUpdatingFromRecognition: Bool = false // Flag to track programmatic updates
+    private var baseText: String = "" // Base text that new recognition should append to
 
     init() {
         speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: currentLanguage.rawValue))
@@ -66,6 +76,9 @@ class SpeechRecognizer: ObservableObject {
             errorMessage = "Speech recognition not authorized"
             return
         }
+
+        // Store the current text as base for new recognition
+        baseText = transcribedText
 
         // Cancel any ongoing task
         if let task = recognitionTask {
@@ -116,8 +129,19 @@ class SpeechRecognizer: ObservableObject {
             guard let self = self else { return }
 
             if let result = result {
+                let newRecognition = result.bestTranscription.formattedString
+
                 DispatchQueue.main.async {
-                    self.transcribedText = result.bestTranscription.formattedString
+                    self.isUpdatingFromRecognition = true
+
+                    // Append new recognition to the base text
+                    if self.baseText.isEmpty {
+                        self.transcribedText = newRecognition
+                    } else {
+                        self.transcribedText = self.baseText + " " + newRecognition
+                    }
+
+                    self.isUpdatingFromRecognition = false
                 }
             }
 
@@ -178,6 +202,16 @@ class SpeechRecognizer: ObservableObject {
         }
     }
 
+    private func restartRecordingAfterEdit() {
+        // Stop the current recording session
+        stopRecording()
+
+        // Restart after a brief delay to ensure cleanup is complete
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.startRecording()
+        }
+    }
+
     func clearText() {
         // Check if currently recording
         let wasRecording = isRecording
@@ -187,8 +221,11 @@ class SpeechRecognizer: ObservableObject {
             stopRecording()
         }
 
-        // Clear the text
+        // Clear all text and reset flags
+        isUpdatingFromRecognition = true
         transcribedText = ""
+        baseText = ""
+        isUpdatingFromRecognition = false
 
         // Clear any error messages
         errorMessage = nil

@@ -31,16 +31,27 @@ struct ContentView: View {
                 .disabled(speechRecognizer.isRecording)
             }
 
-            // Transcribed text preview
-            ScrollView {
-                Text(speechRecognizer.transcribedText.isEmpty ? "Press Cmd+Shift+Space to start dictation" : speechRecognizer.transcribedText)
-                    .font(.body)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(8)
-            }
-            .frame(height: 100)
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(8)
+            // Editable transcribed text
+            TextEditor(text: $speechRecognizer.transcribedText)
+                .font(.body)
+                .frame(height: 100)
+                .padding(4)
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                )
+                .overlay(
+                    Group {
+                        if speechRecognizer.transcribedText.isEmpty {
+                            Text("Press Cmd+Shift+Space to start dictation")
+                                .foregroundColor(.secondary)
+                                .font(.body)
+                                .allowsHitTesting(false)
+                        }
+                    }
+                )
 
             // Controls
             HStack {
