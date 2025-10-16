@@ -133,15 +133,14 @@ See our [Security Policy](SECURITY.md) for more details.
 
 We're just getting started. Here's what's coming:
 
-- 🌐 Additional language support
+- 📜 History of transcriptions with search and export
 - 🤖 Optional local LLM integration for:
   - Filler word removal ("um", "uh", "like")
   - Smart punctuation and formatting
   - Grammar improvements
+- 🔄 Alternative recognition engines (whisper.cpp)
 - 📚 Personal dictionary for custom words and terminology
 - ⚡ Voice shortcuts and text snippets
-- 🎯 Per-application preferences
-- 🔄 Alternative recognition engines (whisper.cpp)
 
 ## Contributing
 
