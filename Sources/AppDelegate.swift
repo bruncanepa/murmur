@@ -29,19 +29,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(rootView: ContentView(speechRecognizer: speechRecognizer))
 
-        // Register global hotkey
+        // Register global hotkey with press-and-hold behavior
         hotkeyManager = HotkeyManager()
-        hotkeyManager.register { [weak self] in
-            self?.toggleRecording()
-        }
-    }
-
-    @objc func toggleRecording() {
-        if speechRecognizer.isRecording {
-            speechRecognizer.stopRecording()
-        } else {
-            speechRecognizer.startRecording()
-        }
+        hotkeyManager.register(
+            onKeyDown: { [weak self] in
+                // Start recording when right Command is pressed
+                self?.speechRecognizer.startRecording()
+            },
+            onKeyUp: { [weak self] in
+                // Stop recording when right Command is released
+                self?.speechRecognizer.stopRecording()
+            }
+        )
     }
 
     @objc func togglePopover() {

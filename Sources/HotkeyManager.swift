@@ -2,44 +2,68 @@ import Cocoa
 import Carbon
 
 class HotkeyManager {
-    private var hotKeyRef: EventHotKeyRef?
-    private var eventHandler: EventHandlerRef?
-    private let hotkeyID = EventHotKeyID(signature: OSType(0x50575350), id: 1) // 'PWSP'
-    private var callback: (() -> Void)?
+    private var eventMonitor: Any?
+    private var onKeyDown: (() -> Void)?
+    private var onKeyUp: (() -> Void)?
+    private var isKeyPressed = false
 
-    func register(callback: @escaping () -> Void) {
-        self.callback = callback
+    func register(onKeyDown: @escaping () -> Void, onKeyUp: @escaping () -> Void) {
+        self.onKeyDown = onKeyDown
+        self.onKeyUp = onKeyUp
 
-        // Cmd+Shift+Space
-        let keyCode: UInt32 = 49 // Space bar
-        let modifiers: UInt32 = UInt32(cmdKey | shiftKey)
+        // Monitor for right Command key (keyCode 54)
+        // We use NSEvent.addGlobalMonitorForEvents for system-wide monitoring
+        // and NSEvent.addLocalMonitorForEvents for app-specific monitoring
 
-        // Create event type spec
-        var eventType = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
+        // Global monitor for when app is in background
+        let globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.flagsChanged]) { [weak self] event in
+            self?.handleFlagsChanged(event)
+        }
 
-        // Install event handler
-        InstallEventHandler(GetApplicationEventTarget(), { (nextHandler, event, userData) -> OSStatus in
-            guard let userData = userData else { return noErr }
-            let manager = Unmanaged<HotkeyManager>.fromOpaque(userData).takeUnretainedValue()
-            manager.callback?()
-            return noErr
-        }, 1, &eventType, Unmanaged.passUnretained(self).toOpaque(), &eventHandler)
+        // Local monitor for when app is active
+        let localMonitor = NSEvent.addLocalMonitorForEvents(matching: [.flagsChanged]) { [weak self] event in
+            self?.handleFlagsChanged(event)
+            return event
+        }
 
-        // Register hotkey
-        let status = RegisterEventHotKey(keyCode, modifiers, hotkeyID, GetApplicationEventTarget(), 0, &hotKeyRef)
+        eventMonitor = (globalMonitor, localMonitor)
+    }
 
-        if status != noErr {
-            print("Failed to register hotkey: \(status)")
+    private func handleFlagsChanged(_ event: NSEvent) {
+        // Right Command key code is 54
+        let rightCommandKeyCode: UInt16 = 54
+
+        // Check if the event is specifically for the right Command key
+        guard event.keyCode == rightCommandKeyCode else { return }
+
+        // Check if right Command is pressed
+        let rightCommandPressed = event.modifierFlags.contains(.command)
+
+        if rightCommandPressed && !isKeyPressed {
+            // Key was just pressed down
+            isKeyPressed = true
+            DispatchQueue.main.async { [weak self] in
+                self?.onKeyDown?()
+            }
+        } else if !rightCommandPressed && isKeyPressed {
+            // Key was just released
+            isKeyPressed = false
+            DispatchQueue.main.async { [weak self] in
+                self?.onKeyUp?()
+            }
         }
     }
 
     func unregister() {
-        if let hotKeyRef = hotKeyRef {
-            UnregisterEventHotKey(hotKeyRef)
+        if let (globalMonitor, localMonitor) = eventMonitor as? (Any, Any) {
+            if let global = globalMonitor as? Any {
+                NSEvent.removeMonitor(global)
+            }
+            if let local = localMonitor as? Any {
+                NSEvent.removeMonitor(local)
+            }
         }
-        if let eventHandler = eventHandler {
-            RemoveEventHandler(eventHandler)
-        }
+        eventMonitor = nil
     }
 
     deinit {

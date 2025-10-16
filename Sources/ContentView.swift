@@ -45,7 +45,7 @@ struct ContentView: View {
                 .overlay(
                     Group {
                         if speechRecognizer.transcribedText.isEmpty {
-                            Text("Press Cmd+Shift+Space to start dictation")
+                            Text("Hold right ⌘ to record")
                                 .foregroundColor(.secondary)
                                 .font(.body)
                                 .allowsHitTesting(false)
