@@ -55,11 +55,11 @@ class HotkeyManager {
     }
 
     func unregister() {
-        if let (globalMonitor, localMonitor) = eventMonitor as? (Any, Any) {
-            if let global = globalMonitor as? Any {
+        if let monitors = eventMonitor as? (Any?, Any?) {
+            if let global = monitors.0 {
                 NSEvent.removeMonitor(global)
             }
-            if let local = localMonitor as? Any {
+            if let local = monitors.1 {
                 NSEvent.removeMonitor(local)
             }
         }

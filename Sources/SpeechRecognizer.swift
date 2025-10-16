@@ -35,6 +35,7 @@ class SpeechRecognizer: ObservableObject {
             speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: currentLanguage.rawValue))
         }
     }
+    @Published var autoTypeEnabled: Bool = true // Auto-type when recording stops
 
     private var audioEngine: AVAudioEngine?
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
@@ -181,6 +182,30 @@ class SpeechRecognizer: ObservableObject {
         recognitionRequest = nil
 
         isRecording = false
+
+        // Auto-type the transcribed text if enabled and not empty
+        if autoTypeEnabled && !transcribedText.isEmpty {
+            // Small delay to ensure the app that had focus regains it
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                guard let self = self else { return }
+
+                // Check and request permission if needed
+                if !AccessibilityManager.hasAccessibilityPermission() {
+                    AccessibilityManager.requestAccessibilityPermission()
+                    self.errorMessage = "Please grant Accessibility permission in System Settings"
+                    return
+                }
+
+                // Type the text using paste method (more reliable)
+                AccessibilityManager.pasteText(self.transcribedText)
+
+                // Clear the text after typing
+                self.isUpdatingFromRecognition = true
+                self.transcribedText = ""
+                self.baseText = ""
+                self.isUpdatingFromRecognition = false
+            }
+        }
     }
 
     func copyToClipboard() {

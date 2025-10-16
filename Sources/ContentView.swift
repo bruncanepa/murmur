@@ -31,6 +31,11 @@ struct ContentView: View {
                 .disabled(speechRecognizer.isRecording)
             }
 
+            // Auto-type toggle
+            Toggle("Auto-type to active app", isOn: $speechRecognizer.autoTypeEnabled)
+                .font(.subheadline)
+                .disabled(speechRecognizer.isRecording)
+
             // Editable transcribed text
             TextEditor(text: $speechRecognizer.transcribedText)
                 .font(.body)

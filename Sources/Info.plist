@@ -26,5 +26,7 @@
     <string>Murmur needs access to your microphone to transcribe your speech.</string>
     <key>NSSpeechRecognitionUsageDescription</key>
     <string>Murmur uses speech recognition to convert your voice to text.</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Murmur needs permission to type transcribed text into other applications.</string>
 </dict>
 </plist>
