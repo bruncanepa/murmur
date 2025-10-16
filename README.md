@@ -11,17 +11,26 @@ A privacy-first voice dictation app for macOS that runs completely offline using
 - ✅ Microphone and speech recognition permissions
 - ✅ Multi-language support (English and Spanish)
 
-## Building
+## Building and Running
 
-### Option 1: Build App Bundle (Recommended)
+### Quick Start (Recommended)
+```bash
+./run.sh
+```
+
+This script will:
+- Stop any running instance
+- Clean previous builds
+- Build a fresh app bundle with proper entitlements
+- Launch the app automatically
+
+### Manual Build
 ```bash
 ./build-app.sh
 open Murmur.app
 ```
 
-This creates a proper macOS app bundle with entitlements for microphone and speech recognition access.
-
-### Option 2: Xcode
+### Xcode
 1. Open Terminal and navigate to the project directory
 2. Generate Xcode project:
    ```bash
@@ -31,7 +40,7 @@ This creates a proper macOS app bundle with entitlements for microphone and spee
 4. Select "Murmur" scheme
 5. Click Run (Cmd+R)
 
-**Note:** `swift run` won't work directly due to privacy/entitlement requirements. Use the build script or Xcode.
+**Note:** `swift run` won't work directly due to privacy/entitlement requirements. Use the run script, build script, or Xcode.
 
 ## First Run
 
