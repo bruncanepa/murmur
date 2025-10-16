@@ -79,6 +79,53 @@ Note: You cannot change language while recording is in progress.
 - Microphone
 - Swift 5.9+
 
+## Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## Privacy Commitment
+
+Murmur is committed to being 100% private:
+- ✅ All processing happens locally on your Mac
+- ✅ No telemetry, analytics, or tracking
+- ✅ No network requests
+- ✅ No data collection of any kind
+- ✅ Open source - verify for yourself
+
+## Roadmap
+
+### Phase 2 (Future)
+- Direct text injection into applications (no copy/paste needed)
+- Accessibility API integration
+
+### Phase 3 (Future)
+- Local LLM integration for:
+  - Filler word removal ("um", "uh", "like")
+  - Auto-formatting and punctuation
+  - Grammar improvements
+
+### Phase 4 (Future)
+- Personal dictionary for custom words/names
+- Voice shortcuts/snippets
+- Per-application preferences
+
+## Support
+
+- 🐛 **Bug reports**: [Open an issue](https://github.com/bruncanepa/murmur/issues)
+- 💡 **Feature requests**: [Open an issue](https://github.com/bruncanepa/murmur/issues)
+- 📖 **Documentation**: Check [QUICKSTART.md](QUICKSTART.md)
+
+## Acknowledgments
+
+Built with native macOS technologies:
+- Speech Framework (SFSpeechRecognizer)
+- SwiftUI
+- AVFoundation
+
+Inspired by the need for privacy-focused alternatives to cloud-based dictation services.
+
 ## License
 
-MIT
+MIT License - see [LICENSE](LICENSE) file for details.
+
+Copyright (c) 2025 Bruno Canepa
