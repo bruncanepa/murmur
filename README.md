@@ -25,6 +25,7 @@ Murmur is a native macOS application that transforms your voice into text instan
 In a world where most voice dictation services send your data to the cloud, Murmur takes a different approach: **your voice never leaves your Mac**. It's the dictation tool for those who value privacy, simplicity, and instant results.
 
 **Perfect for:**
+- 💻 Programmers or Vibe Coders
 - 📧 Writing emails and messages
 - 📝 Taking notes and documentation
 - 💬 Chatting in messaging apps
