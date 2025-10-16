@@ -1,11 +1,11 @@
-# PWhisper - Quick Start Guide
+# Murmur - Quick Start Guide
 
 ## Running the App
 
 ### Method 1: App Bundle (Recommended)
 ```bash
 ./build-app.sh
-open PWhisper.app
+open Murmur.app
 ```
 
 This creates a proper app with all the necessary entitlements and permissions.
@@ -16,14 +16,14 @@ This creates a proper app with all the necessary entitlements and permissions.
 swift package generate-xcodeproj
 
 # Open in Xcode
-open PWhisper.xcodeproj
+open Murmur.xcodeproj
 ```
 
 Then press **Cmd+R** to build and run.
 
 ## First Launch Setup
 
-When you first launch PWhisper, macOS will request permissions:
+When you first launch Murmur, macOS will request permissions:
 
 1. **Speech Recognition Permission**
    - Click "OK" to allow
@@ -66,12 +66,12 @@ If you accidentally denied permissions, you can enable them later in:
 
 ### "Speech recognition not authorized"
 - Go to **System Settings → Privacy & Security → Speech Recognition**
-- Enable PWhisper
+- Enable Murmur
 
 ### "No microphone detected"
 - Check your microphone is connected
 - Go to **System Settings → Privacy & Security → Microphone**
-- Enable PWhisper
+- Enable Murmur
 
 ### Hotkey not working
 - The app must be running (check for icon in menu bar)
@@ -96,7 +96,7 @@ This is **Phase 1** - basic speech recognition with hotkey support.
 
 ## Privacy Note
 
-Unlike wisprflow.ai, PWhisper:
+Unlike wisprflow.ai, Murmur:
 - Never sends your voice to the cloud
 - Never stores recordings
 - Uses only native macOS APIs

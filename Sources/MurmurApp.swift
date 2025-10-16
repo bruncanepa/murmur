@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct PWhisperApp: App {
+struct MurmurApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {

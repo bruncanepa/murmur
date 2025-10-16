@@ -2,18 +2,18 @@
 import PackageDescription
 
 let package = Package(
-    name: "PWhisper",
+    name: "Murmur",
     platforms: [
         .macOS(.v13)
     ],
     products: [
         .executable(
-            name: "PWhisper",
-            targets: ["PWhisper"])
+            name: "Murmur",
+            targets: ["Murmur"])
     ],
     targets: [
         .executableTarget(
-            name: "PWhisper",
+            name: "Murmur",
             dependencies: [],
             path: "Sources",
             exclude: ["Info.plist"])

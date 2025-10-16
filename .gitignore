@@ -24,3 +24,7 @@ Pods/
 .DS_Store
 .AppleDouble
 .LSOverride
+
+# App bundles
+Murmur.app/
+*.app/

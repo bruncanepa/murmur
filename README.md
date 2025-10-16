@@ -1,4 +1,4 @@
-# PWhisper - Private Voice Dictation
+# Murmur - Private Voice Dictation
 
 A privacy-first voice dictation app for macOS that runs completely offline using native macOS Speech Recognition.
 
@@ -16,7 +16,7 @@ A privacy-first voice dictation app for macOS that runs completely offline using
 ### Option 1: Build App Bundle (Recommended)
 ```bash
 ./build-app.sh
-open PWhisper.app
+open Murmur.app
 ```
 
 This creates a proper macOS app bundle with entitlements for microphone and speech recognition access.
@@ -27,8 +27,8 @@ This creates a proper macOS app bundle with entitlements for microphone and spee
    ```bash
    swift package generate-xcodeproj
    ```
-3. Open `PWhisper.xcodeproj` in Xcode
-4. Select "PWhisper" scheme
+3. Open `Murmur.xcodeproj` in Xcode
+4. Select "Murmur" scheme
 5. Click Run (Cmd+R)
 
 **Note:** `swift run` won't work directly due to privacy/entitlement requirements. Use the build script or Xcode.

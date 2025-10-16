@@ -168,7 +168,7 @@ class SpeechRecognizer: ObservableObject {
         center.requestAuthorization(options: [.alert, .sound]) { granted, error in
             if granted {
                 let content = UNMutableNotificationContent()
-                content.title = "PWhisper"
+                content.title = "Murmur"
                 content.body = "Text copied to clipboard"
                 content.sound = .default
 

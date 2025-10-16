@@ -23,8 +23,8 @@
     <key>LSUIElement</key>
     <true/>
     <key>NSMicrophoneUsageDescription</key>
-    <string>PWhisper needs access to your microphone to transcribe your speech.</string>
+    <string>Murmur needs access to your microphone to transcribe your speech.</string>
     <key>NSSpeechRecognitionUsageDescription</key>
-    <string>PWhisper uses speech recognition to convert your voice to text.</string>
+    <string>Murmur uses speech recognition to convert your voice to text.</string>
 </dict>
 </plist>

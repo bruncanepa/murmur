@@ -1,19 +1,19 @@
 #!/bin/bash
 
-# Quick rebuild and run script for PWhisper
+# Quick rebuild and run script for Murmur
 
 set -e
 
-echo "🛑 Stopping PWhisper..."
-killall PWhisper 2>/dev/null || true
+echo "🛑 Stopping Murmur..."
+killall Murmur 2>/dev/null || true
 
 echo "🗑️  Removing old build..."
-rm -rf PWhisper.app
+rm -rf Murmur.app
 
-echo "🔨 Building PWhisper..."
+echo "🔨 Building Murmur..."
 ./build-app.sh
 
-echo "🚀 Launching PWhisper..."
-open PWhisper.app
+echo "🚀 Launching Murmur..."
+open Murmur.app
 
 echo "✅ Done!"

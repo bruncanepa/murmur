@@ -1,28 +1,28 @@
 #!/bin/bash
 
-# Build PWhisper macOS app bundle with proper entitlements
+# Build Murmur macOS app bundle with proper entitlements
 
 set -e
 
-echo "Building PWhisper..."
+echo "Building Murmur..."
 
 # Clean previous builds
 rm -rf .build/release
-rm -rf PWhisper.app
+rm -rf Murmur.app
 
 # Build the binary
 swift build -c release
 
 # Create app bundle structure
 echo "Creating app bundle..."
-mkdir -p PWhisper.app/Contents/MacOS
-mkdir -p PWhisper.app/Contents/Resources
+mkdir -p Murmur.app/Contents/MacOS
+mkdir -p Murmur.app/Contents/Resources
 
 # Copy binary
-cp .build/release/PWhisper PWhisper.app/Contents/MacOS/
+cp .build/release/Murmur Murmur.app/Contents/MacOS/
 
 # Create Info.plist
-cat > PWhisper.app/Contents/Info.plist << 'EOF'
+cat > Murmur.app/Contents/Info.plist << 'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -30,13 +30,13 @@ cat > PWhisper.app/Contents/Info.plist << 'EOF'
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
     <key>CFBundleExecutable</key>
-    <string>PWhisper</string>
+    <string>Murmur</string>
     <key>CFBundleIdentifier</key>
-    <string>com.pwhisper.app</string>
+    <string>com.murmur.app</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>PWhisper</string>
+    <string>Murmur</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -48,25 +48,25 @@ cat > PWhisper.app/Contents/Info.plist << 'EOF'
     <key>LSUIElement</key>
     <true/>
     <key>NSMicrophoneUsageDescription</key>
-    <string>PWhisper needs access to your microphone to transcribe your speech.</string>
+    <string>Murmur needs access to your microphone to transcribe your speech.</string>
     <key>NSSpeechRecognitionUsageDescription</key>
-    <string>PWhisper uses speech recognition to convert your voice to text.</string>
+    <string>Murmur uses speech recognition to convert your voice to text.</string>
     <key>NSUserNotificationsUsageDescription</key>
-    <string>PWhisper sends notifications when text is copied to clipboard.</string>
+    <string>Murmur sends notifications when text is copied to clipboard.</string>
 </dict>
 </plist>
 EOF
 
 # Sign the app with entitlements
 echo "Signing app..."
-codesign --force --deep --sign - --entitlements PWhisper.entitlements PWhisper.app
+codesign --force --deep --sign - --entitlements Murmur.entitlements Murmur.app
 
 echo ""
 echo "✅ Build complete!"
 echo ""
 echo "To run the app:"
-echo "  open PWhisper.app"
+echo "  open Murmur.app"
 echo ""
 echo "To install to Applications:"
-echo "  cp -r PWhisper.app /Applications/"
+echo "  cp -r Murmur.app /Applications/"
 echo ""
