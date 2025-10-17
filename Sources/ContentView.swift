@@ -22,7 +22,7 @@ struct ContentView: View {
 
                 Spacer()
 
-                Picker("Language", selection: $speechRecognizer.currentLanguage) {
+                Picker("", selection: $speechRecognizer.currentLanguage) {
                     ForEach(RecognitionLanguage.allCases, id: \.self) { language in
                         Text(language.displayName).tag(language)
                     }
@@ -62,7 +62,8 @@ struct ContentView: View {
             HStack {
                 Button(speechRecognizer.isRecording ? "Stop" : "Start") {
                     if speechRecognizer.isRecording {
-                        speechRecognizer.stopRecording()
+                        // Manual stop - don't auto-type
+                        speechRecognizer.stopRecording(autoType: false)
                     } else {
                         speechRecognizer.startRecording()
                     }

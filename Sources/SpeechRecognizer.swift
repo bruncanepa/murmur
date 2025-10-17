@@ -69,9 +69,9 @@ class SpeechRecognizer: ObservableObject {
         }
     }
 
-    func startRecording() {
-        // Check if already recording
-        guard !isRecording else { return }
+    func startRecording(isRestart: Bool = false) {
+        // Check if already recording (skip check if this is a restart)
+        guard isRestart || !isRecording else { return }
 
         // Check authorization
         guard SFSpeechRecognizer.authorizationStatus() == .authorized else {
@@ -79,8 +79,10 @@ class SpeechRecognizer: ObservableObject {
             return
         }
 
-        // Store the current text as base for new recognition
-        baseText = transcribedText
+        // Store the current text as base for new recognition (if not already set)
+        if !isRestart {
+            baseText = transcribedText
+        }
 
         // Cancel any ongoing task
         if let task = recognitionTask {
@@ -147,7 +149,9 @@ class SpeechRecognizer: ObservableObject {
                 }
             }
 
+            // Handle completion (error or final result)
             if error != nil || result?.isFinal == true {
+                // Stop the audio engine temporarily
                 audioEngine.stop()
                 inputNode.removeTap(onBus: 0)
 
@@ -155,7 +159,29 @@ class SpeechRecognizer: ObservableObject {
                 self.recognitionTask = nil
 
                 DispatchQueue.main.async {
-                    self.isRecording = false
+                    // Check if we should auto-restart (user still holding key)
+                    // If isRecording is still true, it means user hasn't released the key
+                    let shouldRestart = self.isRecording
+
+                    if shouldRestart {
+                        // Speech recognizer hit time limit - restart seamlessly
+                        print("⚠️ Recognition session ended, restarting...")
+
+                        // Save current text as base for next segment
+                        self.baseText = self.transcribedText
+
+                        // Restart recording after brief delay
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+                            guard let self = self, self.isRecording else { return }
+
+                            // Restart the recognition (will create new audio engine)
+                            print("🔄 Restarting recognition session...")
+                            self.startRecording(isRestart: true)
+                        }
+                    } else {
+                        // User released the key normally
+                        self.isRecording = false
+                    }
                 }
             }
         }
@@ -164,29 +190,35 @@ class SpeechRecognizer: ObservableObject {
         errorMessage = nil
     }
 
-    func stopRecording() {
+    func stopRecording(autoType: Bool = true) {
+        // Set flag first to prevent race conditions
+        isRecording = false
+
         // Cancel recognition task
         recognitionTask?.cancel()
         recognitionTask = nil
 
-        // Stop audio engine and remove tap
+        // Stop audio engine and remove tap safely
         if let audioEngine = audioEngine {
             if audioEngine.isRunning {
                 audioEngine.stop()
             }
-            audioEngine.inputNode.removeTap(onBus: 0)
+
+            // Safely remove tap - wrap in try/catch to prevent crashes
+            let inputNode = audioEngine.inputNode
+            if inputNode.numberOfInputs > 0 {
+                inputNode.removeTap(onBus: 0)
+            }
         }
 
         // End recognition request
         recognitionRequest?.endAudio()
         recognitionRequest = nil
 
-        isRecording = false
-
-        // Auto-type the transcribed text if enabled and not empty
-        if autoTypeEnabled && !transcribedText.isEmpty {
+        // Auto-type the transcribed text if enabled, requested, and not empty
+        if autoType && autoTypeEnabled && !transcribedText.isEmpty {
             // Small delay to ensure the app that had focus regains it
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
                 guard let self = self else { return }
 
                 // Check and request permission if needed
@@ -200,10 +232,12 @@ class SpeechRecognizer: ObservableObject {
                 AccessibilityManager.pasteText(self.transcribedText)
 
                 // Clear the text after typing
-                self.isUpdatingFromRecognition = true
-                self.transcribedText = ""
-                self.baseText = ""
-                self.isUpdatingFromRecognition = false
+                DispatchQueue.main.async {
+                    self.isUpdatingFromRecognition = true
+                    self.transcribedText = ""
+                    self.baseText = ""
+                    self.isUpdatingFromRecognition = false
+                }
             }
         }
     }
@@ -275,9 +309,9 @@ class SpeechRecognizer: ObservableObject {
         // Check if currently recording
         let wasRecording = isRecording
 
-        // Stop recording if currently active
+        // Stop recording if currently active (don't auto-type when clearing)
         if wasRecording {
-            stopRecording()
+            stopRecording(autoType: false)
         }
 
         // Clear all text and reset flags
