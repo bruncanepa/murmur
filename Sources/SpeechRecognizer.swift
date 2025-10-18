@@ -8,11 +8,13 @@ import UserNotifications
 enum RecognitionLanguage: String, CaseIterable {
     case english = "en-US"
     case spanish = "es-ES"
+    case portuguese = "pt-BR"
 
     var displayName: String {
         switch self {
         case .english: return "English"
         case .spanish: return "Spanish"
+        case .portuguese: return "Portuguese"
         }
     }
 }
@@ -44,6 +46,7 @@ class SpeechRecognizer: ObservableObject {
     private var isUpdatingFromRecognition: Bool = false // Flag to track programmatic updates
     private var baseText: String = "" // Base text that new recognition should append to
     private var isRestartingAfterEdit: Bool = false // Flag to prevent multiple restart triggers
+    private let audioLock = NSLock() // Protect audio engine operations
 
     init() {
         speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: currentLanguage.rawValue))
@@ -70,12 +73,17 @@ class SpeechRecognizer: ObservableObject {
     }
 
     func startRecording(isRestart: Bool = false) {
+        audioLock.lock()
+        defer { audioLock.unlock() }
+
         // Check if already recording (skip check if this is a restart)
         guard isRestart || !isRecording else { return }
 
         // Check authorization
         guard SFSpeechRecognizer.authorizationStatus() == .authorized else {
-            errorMessage = "Speech recognition not authorized"
+            DispatchQueue.main.async { [weak self] in
+                self?.errorMessage = "Speech recognition not authorized"
+            }
             return
         }
 
@@ -93,7 +101,9 @@ class SpeechRecognizer: ObservableObject {
         // Create and configure recognition request
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
         guard let recognitionRequest = recognitionRequest else {
-            errorMessage = "Unable to create recognition request"
+            DispatchQueue.main.async { [weak self] in
+                self?.errorMessage = "Unable to create recognition request"
+            }
             return
         }
         recognitionRequest.shouldReportPartialResults = true
@@ -101,12 +111,31 @@ class SpeechRecognizer: ObservableObject {
         // Create audio engine and input node
         audioEngine = AVAudioEngine()
         guard let audioEngine = audioEngine else {
-            errorMessage = "Unable to create audio engine"
+            DispatchQueue.main.async { [weak self] in
+                self?.errorMessage = "Unable to create audio engine"
+            }
             return
         }
 
         let inputNode = audioEngine.inputNode
+
+        // Validate audio format before installing tap
+        guard inputNode.numberOfInputs > 0 else {
+            DispatchQueue.main.async { [weak self] in
+                self?.errorMessage = "No audio input available"
+            }
+            return
+        }
+
         let recordingFormat = inputNode.outputFormat(forBus: 0)
+
+        // Validate recording format
+        guard recordingFormat.sampleRate > 0 && recordingFormat.channelCount > 0 else {
+            DispatchQueue.main.async { [weak self] in
+                self?.errorMessage = "Invalid audio format"
+            }
+            return
+        }
 
         // Install tap on input node
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
@@ -118,13 +147,27 @@ class SpeechRecognizer: ObservableObject {
         do {
             try audioEngine.start()
         } catch {
-            errorMessage = "Audio engine failed to start: \(error.localizedDescription)"
+            // Clean up tap if engine failed to start
+            if inputNode.numberOfInputs > 0 {
+                inputNode.removeTap(onBus: 0)
+            }
+            DispatchQueue.main.async { [weak self] in
+                self?.errorMessage = "Audio engine failed to start: \(error.localizedDescription)"
+            }
             return
         }
 
         // Verify speech recognizer is available for the selected language
         guard let speechRecognizer = speechRecognizer, speechRecognizer.isAvailable else {
-            errorMessage = "Speech recognition not available for \(currentLanguage.displayName)"
+            // Clean up before returning
+            audioEngine.stop()
+            if inputNode.numberOfInputs > 0 {
+                inputNode.removeTap(onBus: 0)
+            }
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.errorMessage = "Speech recognition not available for \(self.currentLanguage.displayName)"
+            }
             return
         }
 
@@ -151,9 +194,16 @@ class SpeechRecognizer: ObservableObject {
 
             // Handle completion (error or final result)
             if error != nil || result?.isFinal == true {
-                // Stop the audio engine temporarily
-                audioEngine.stop()
-                inputNode.removeTap(onBus: 0)
+                // Safely stop the audio engine
+                self.audioLock.lock()
+                if let engine = self.audioEngine, engine.isRunning {
+                    engine.stop()
+                    let node = engine.inputNode
+                    if node.numberOfInputs > 0 {
+                        node.removeTap(onBus: 0)
+                    }
+                }
+                self.audioLock.unlock()
 
                 self.recognitionRequest = nil
                 self.recognitionTask = nil
@@ -187,56 +237,74 @@ class SpeechRecognizer: ObservableObject {
         }
 
         isRecording = true
-        errorMessage = nil
+        DispatchQueue.main.async { [weak self] in
+            self?.errorMessage = nil
+        }
     }
 
     func stopRecording(autoType: Bool = true) {
+        audioLock.lock()
+
         // Set flag first to prevent race conditions
         isRecording = false
 
-        // Cancel recognition task
-        recognitionTask?.cancel()
-        recognitionTask = nil
-
-        // Stop audio engine and remove tap safely
+        // Stop audio engine first (no more input)
         if let audioEngine = audioEngine {
             if audioEngine.isRunning {
                 audioEngine.stop()
             }
 
-            // Safely remove tap - wrap in try/catch to prevent crashes
+            // Safely remove tap
             let inputNode = audioEngine.inputNode
             if inputNode.numberOfInputs > 0 {
                 inputNode.removeTap(onBus: 0)
             }
         }
 
-        // End recognition request
+        // Signal end of audio to allow final processing
         recognitionRequest?.endAudio()
-        recognitionRequest = nil
 
-        // Auto-type the transcribed text if enabled, requested, and not empty
-        if autoType && autoTypeEnabled && !transcribedText.isEmpty {
-            // Small delay to ensure the app that had focus regains it
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
-                guard let self = self else { return }
+        audioLock.unlock()
 
-                // Check and request permission if needed
-                if !AccessibilityManager.hasAccessibilityPermission() {
-                    AccessibilityManager.requestAccessibilityPermission()
-                    self.errorMessage = "Please grant Accessibility permission in System Settings"
-                    return
-                }
+        // Give the recognizer time to process remaining buffers (300ms)
+        // This ensures the last few words are captured before cleanup
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            guard let self = self else { return }
 
-                // Type the text using paste method (more reliable)
-                AccessibilityManager.pasteText(self.transcribedText)
+            self.audioLock.lock()
 
-                // Clear the text after typing
-                DispatchQueue.main.async {
-                    self.isUpdatingFromRecognition = true
-                    self.transcribedText = ""
-                    self.baseText = ""
-                    self.isUpdatingFromRecognition = false
+            // Now cancel and cleanup
+            self.recognitionTask?.cancel()
+            self.recognitionTask = nil
+            self.recognitionRequest = nil
+
+            self.audioLock.unlock()
+
+            // Auto-type the transcribed text if enabled, requested, and not empty
+            if autoType && self.autoTypeEnabled && !self.transcribedText.isEmpty {
+                // Additional delay to ensure the app that had focus regains it
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+                    guard let self = self else { return }
+
+                    // Check and request permission if needed
+                    if !AccessibilityManager.hasAccessibilityPermission() {
+                        AccessibilityManager.requestAccessibilityPermission()
+                        DispatchQueue.main.async {
+                            self.errorMessage = "Please grant Accessibility permission in System Settings"
+                        }
+                        return
+                    }
+
+                    // Type the text using paste method (more reliable)
+                    AccessibilityManager.pasteText(self.transcribedText)
+
+                    // Clear the text after typing
+                    DispatchQueue.main.async {
+                        self.isUpdatingFromRecognition = true
+                        self.transcribedText = ""
+                        self.baseText = ""
+                        self.isUpdatingFromRecognition = false
+                    }
                 }
             }
         }
@@ -263,6 +331,8 @@ class SpeechRecognizer: ObservableObject {
     }
 
     private func restartRecordingAfterEdit() {
+        audioLock.lock()
+
         // Set flag to prevent multiple restart triggers
         isRestartingAfterEdit = true
 
@@ -278,7 +348,10 @@ class SpeechRecognizer: ObservableObject {
             if audioEngine.isRunning {
                 audioEngine.stop()
             }
-            audioEngine.inputNode.removeTap(onBus: 0)
+            let inputNode = audioEngine.inputNode
+            if inputNode.numberOfInputs > 0 {
+                inputNode.removeTap(onBus: 0)
+            }
         }
 
         // End recognition request
@@ -287,6 +360,8 @@ class SpeechRecognizer: ObservableObject {
 
         // Set isRecording to false temporarily
         isRecording = false
+
+        audioLock.unlock()
 
         // Restore the edited text and restart after a brief delay
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
@@ -306,8 +381,12 @@ class SpeechRecognizer: ObservableObject {
     }
 
     func clearText() {
+        audioLock.lock()
+
         // Check if currently recording
         let wasRecording = isRecording
+
+        audioLock.unlock()
 
         // Stop recording if currently active (don't auto-type when clearing)
         if wasRecording {
@@ -315,13 +394,16 @@ class SpeechRecognizer: ObservableObject {
         }
 
         // Clear all text and reset flags
-        isUpdatingFromRecognition = true
-        transcribedText = ""
-        baseText = ""
-        isUpdatingFromRecognition = false
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.isUpdatingFromRecognition = true
+            self.transcribedText = ""
+            self.baseText = ""
+            self.isUpdatingFromRecognition = false
 
-        // Clear any error messages
-        errorMessage = nil
+            // Clear any error messages
+            self.errorMessage = nil
+        }
 
         // Restart recording if it was active
         if wasRecording {
