@@ -82,6 +82,21 @@ struct ContentView: View {
                 .buttonStyle(.bordered)
             }
 
+            // Quit button
+            HStack {
+                Spacer()
+
+                Button("Quit Murmur") {
+                    NSApplication.shared.terminate(nil)
+                }
+                .buttonStyle(.borderless)
+                .foregroundColor(.secondary)
+                .font(.caption)
+                .disabled(speechRecognizer.isRecording)
+
+                Spacer()
+            }
+
             // Permission status
             if let error = speechRecognizer.errorMessage {
                 Text(error)

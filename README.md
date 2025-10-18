@@ -99,24 +99,33 @@ cd murmur
 
 ### Build Scripts
 
-**Quick build and run** (recommended):
+**Development (recommended):**
 ```bash
-./run.sh
+./dev.sh                # Quick development build
+./dev.sh --force        # Clean rebuild
 ```
 
-**Manual build**:
+**Production:**
 ```bash
-./build-app.sh
-open Murmur.app
+./prod.sh               # Optimized production build
 ```
 
-**For development in Xcode**:
+**Manual build:**
+```bash
+./build-app.sh --dev    # Development
+./build-app.sh --prod   # Production
+open Murmur-Dev.app     # or Murmur.app
+```
+
+**For development in Xcode:**
 ```bash
 swift package generate-xcodeproj
 open Murmur.xcodeproj
 ```
 
 > **Note**: `swift run` won't work directly due to entitlement requirements. Always use the provided build scripts or Xcode.
+>
+> **See [BUILD.md](BUILD.md) for detailed build documentation including permission management.**
 
 ## Privacy Commitment
 

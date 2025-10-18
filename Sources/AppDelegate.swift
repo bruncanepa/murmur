@@ -25,7 +25,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Create popover with shared speech recognizer
         popover = NSPopover()
-        popover.contentSize = NSSize(width: 300, height: 200)
+        popover.contentSize = NSSize(width: 300, height: 280)
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(rootView: ContentView(speechRecognizer: speechRecognizer))
 

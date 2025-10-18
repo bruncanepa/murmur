@@ -298,7 +298,8 @@ class SpeechRecognizer: ObservableObject {
                     // Type the text using paste method (more reliable)
                     AccessibilityManager.pasteText(self.transcribedText)
 
-                    // Clear the text after typing
+                    // Clear text after typing (for hotkey flow)
+                    // When autoType is false (manual Stop button), text stays visible
                     DispatchQueue.main.async {
                         self.isUpdatingFromRecognition = true
                         self.transcribedText = ""
