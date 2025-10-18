@@ -6,6 +6,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var popover: NSPopover!
     private var hotkeyManager: HotkeyManager!
     private var speechRecognizer: SpeechRecognizer!
+    private var previouslyFocusedApp: NSRunningApplication? // Track app to paste to
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Hide dock icon - we're a menu bar only app
@@ -33,12 +34,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         hotkeyManager = HotkeyManager()
         hotkeyManager.register(
             onKeyDown: { [weak self] in
+                guard let self = self else { return }
+
+                // Remember which app was focused before we show popover
+                self.previouslyFocusedApp = NSWorkspace.shared.frontmostApplication
+
+                // Show popover to see live transcription
+                if let button = self.statusItem.button, !self.popover.isShown {
+                    self.popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+                }
+
                 // Start recording when right Command is pressed
-                self?.speechRecognizer.startRecording()
+                self.speechRecognizer.startRecording()
             },
             onKeyUp: { [weak self] in
-                // Stop recording when right Command is released
-                self?.speechRecognizer.stopRecording()
+                guard let self = self else { return }
+
+                // Close popover first - macOS will restore focus automatically
+                if self.popover.isShown {
+                    self.popover.performClose(nil)
+                }
+
+                // Wait for focus to return, then stop recording and paste
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    self.speechRecognizer.stopRecording()
+                }
+
+                self.previouslyFocusedApp = nil
             }
         )
     }

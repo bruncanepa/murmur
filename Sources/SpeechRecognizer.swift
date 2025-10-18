@@ -282,8 +282,8 @@ class SpeechRecognizer: ObservableObject {
 
             // Auto-type the transcribed text if enabled, requested, and not empty
             if autoType && self.autoTypeEnabled && !self.transcribedText.isEmpty {
-                // Additional delay to ensure the app that had focus regains it
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+                // No additional delay needed - focus should already be restored by closing popover
+                DispatchQueue.main.async { [weak self] in
                     guard let self = self else { return }
 
                     // Check and request permission if needed
@@ -296,6 +296,7 @@ class SpeechRecognizer: ObservableObject {
                     }
 
                     // Type the text using paste method (more reliable)
+                    // macOS should have already restored focus by closing the popover
                     AccessibilityManager.pasteText(self.transcribedText)
 
                     // Clear text after typing (for hotkey flow)
