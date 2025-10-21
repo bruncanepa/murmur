@@ -38,15 +38,20 @@ class SpeechRecognizer: ObservableObject {
         }
     }
     @Published var autoTypeEnabled: Bool = true // Auto-type when recording stops
+    @Published var onDeviceRecognitionEnabled: Bool = true // Use on-device recognition (offline, private)
 
     private var audioEngine: AVAudioEngine?
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private var speechRecognizer: SFSpeechRecognizer?
     private var isUpdatingFromRecognition: Bool = false // Flag to track programmatic updates
-    private var baseText: String = "" // Base text that new recognition should append to
+    private var historicalResults: [SFSpeechRecognitionResult] = [] // Finalized results
+    private var fullTranscription = "" // Accumulated final transcription
     private var isRestartingAfterEdit: Bool = false // Flag to prevent multiple restart triggers
+    private var isRestartingSession: Bool = false // Flag to prevent concurrent time limit restarts
     private let audioLock = NSLock() // Protect audio engine operations
+    private var lastPartialText = "" // Track previous partial to detect session splits
+    private var lastSegmentCount = 0 // Track segment count to detect real splits vs refinements
 
     init() {
         speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: currentLanguage.rawValue))
@@ -76,8 +81,13 @@ class SpeechRecognizer: ObservableObject {
         audioLock.lock()
         defer { audioLock.unlock() }
 
+        print("🔍 startRecording called - isRestart: \(isRestart), currentText: '\(transcribedText)'")
+
         // Check if already recording (skip check if this is a restart)
-        guard isRestart || !isRecording else { return }
+        guard isRestart || !isRecording else {
+            print("⚠️ Already recording, ignoring startRecording call")
+            return
+        }
 
         // Check authorization
         guard SFSpeechRecognizer.authorizationStatus() == .authorized else {
@@ -85,11 +95,6 @@ class SpeechRecognizer: ObservableObject {
                 self?.errorMessage = "Speech recognition not authorized"
             }
             return
-        }
-
-        // Store the current text as base for new recognition (if not already set)
-        if !isRestart {
-            baseText = transcribedText
         }
 
         // Cancel any ongoing task
@@ -107,6 +112,17 @@ class SpeechRecognizer: ObservableObject {
             return
         }
         recognitionRequest.shouldReportPartialResults = true
+
+        // Enable automatic punctuation (like iPhone) - requires macOS 13.0+
+        if #available(macOS 13.0, *) {
+            recognitionRequest.addsPunctuation = true
+        }
+
+        // Use on-device recognition if enabled (offline, private, but slightly less accurate)
+        recognitionRequest.requiresOnDeviceRecognition = onDeviceRecognitionEnabled
+
+        // Optimize for dictation (long-form text entry)
+        recognitionRequest.taskHint = .dictation
 
         // Create audio engine and input node
         audioEngine = AVAudioEngine()
@@ -176,67 +192,139 @@ class SpeechRecognizer: ObservableObject {
             guard let self = self else { return }
 
             if let result = result {
-                let newRecognition = result.bestTranscription.formattedString
+                let currentText = result.bestTranscription.formattedString
 
                 DispatchQueue.main.async {
                     self.isUpdatingFromRecognition = true
 
-                    // Append new recognition to the base text
-                    if self.baseText.isEmpty {
-                        self.transcribedText = newRecognition
+                    if result.isFinal {
+                        // Append finalized result to history
+                        self.historicalResults.append(result)
+                        self.fullTranscription += (self.fullTranscription.isEmpty ? "" : " ") + currentText
+                        print("✅ Final full text: \(self.fullTranscription)")
+                        self.transcribedText = self.fullTranscription
                     } else {
-                        self.transcribedText = self.baseText + " " + newRecognition
+                        // For partial results, detect real session splits using segment analysis
+                        let segments = result.bestTranscription.segments
+                        let currentSegmentCount = segments.count
+
+                        // Detect real split: dramatic segment drop indicating a new sentence
+                        // On-device recognition resets segments when starting a new utterance
+                        // Criteria:
+                        //   1. Previous had substantial text (>5 segments) and drops to very few (≤3)
+                        //   2. Text has changed (not just re-segmentation of same text)
+                        let hasDramaticDrop = self.lastSegmentCount > 5 && currentSegmentCount <= 3
+                        let hasNewText = currentText != self.lastPartialText
+
+                        if !self.lastPartialText.isEmpty && hasDramaticDrop && hasNewText {
+                            // Real session split detected - save previous partial before it's lost
+                            self.fullTranscription += (self.fullTranscription.isEmpty ? "" : " ") + self.lastPartialText
+                            print("🔄 Session split detected:")
+                            print("   Segments: \(self.lastSegmentCount) → \(currentSegmentCount)")
+                            print("   Saved: '\(self.lastPartialText)'")
+                            print("📝 Full transcription now: '\(self.fullTranscription)'")
+                        } else if hasDramaticDrop && !hasNewText {
+                            print("🔄 Re-segmentation detected (same text): \(self.lastSegmentCount) → \(currentSegmentCount)")
+                        }
+
+                        // Update tracking for next iteration
+                        self.lastPartialText = currentText
+                        self.lastSegmentCount = currentSegmentCount
+
+                        // Display accumulated + current
+                        let displayText = self.fullTranscription.isEmpty ? currentText : self.fullTranscription + " " + currentText
+                        self.transcribedText = displayText
+                        print("⏳ Partial (\(currentSegmentCount) segments): '\(displayText)'")
                     }
 
                     self.isUpdatingFromRecognition = false
                 }
             }
 
-            // Handle completion (error or final result)
-            if error != nil || result?.isFinal == true {
-                // Safely stop the audio engine
-                self.audioLock.lock()
-                if let engine = self.audioEngine, engine.isRunning {
-                    engine.stop()
-                    let node = engine.inputNode
-                    if node.numberOfInputs > 0 {
-                        node.removeTap(onBus: 0)
+            // Handle completion - ONLY on actual errors, not on isFinal
+            // On-device recognition marks results as final frequently (after punctuation)
+            // but the recognition continues in the same session - don't restart!
+            if let error = error {
+                let nsError = error as NSError
+
+                // Check if this is the time limit error (on-device recognition ~1 minute limit)
+                let isTimeLimitError = nsError.domain == "kAFAssistantErrorDomain" && nsError.code == 1101
+
+                if isTimeLimitError && self.isRecording && !self.isRestartingSession {
+                    // Time limit hit while still recording - restart seamlessly
+                    // Set flag to prevent concurrent restart attempts
+                    self.isRestartingSession = true
+                    print("⏱️ Recognition time limit hit, restarting...")
+
+                    // Safely stop the audio engine
+                    self.audioLock.lock()
+                    if let engine = self.audioEngine, engine.isRunning {
+                        engine.stop()
+                        let node = engine.inputNode
+                        if node.numberOfInputs > 0 {
+                            node.removeTap(onBus: 0)
+                        }
                     }
-                }
-                self.audioLock.unlock()
+                    self.audioLock.unlock()
 
-                self.recognitionRequest = nil
-                self.recognitionTask = nil
+                    self.recognitionRequest = nil
+                    self.recognitionTask = nil
 
-                DispatchQueue.main.async {
-                    // Check if we should auto-restart (user still holding key)
-                    // If isRecording is still true, it means user hasn't released the key
-                    let shouldRestart = self.isRecording
+                    // Save current transcription and restart
+                    DispatchQueue.main.async {
+                        self.fullTranscription = self.transcribedText
+                        print("💾 Saved full transcription before restart: '\(self.fullTranscription)'")
 
-                    if shouldRestart {
-                        // Speech recognizer hit time limit - restart seamlessly
-                        print("⚠️ Recognition session ended, restarting...")
-
-                        // Save current text as base for next segment
-                        self.baseText = self.transcribedText
-
-                        // Restart recording after brief delay
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
-                            guard let self = self, self.isRecording else { return }
-
-                            // Restart the recognition (will create new audio engine)
-                            print("🔄 Restarting recognition session...")
+                        // Restart after longer delay to avoid conflicts
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                            guard let self = self, self.isRecording else {
+                                self?.isRestartingSession = false
+                                return
+                            }
+                            print("🔄 Restarting recognition after time limit...")
+                            self.isRestartingSession = false
                             self.startRecording(isRestart: true)
                         }
-                    } else {
-                        // User released the key normally
+                    }
+                } else if isTimeLimitError && self.isRestartingSession {
+                    // Ignore duplicate time limit errors during restart
+                    print("⏭️ Ignoring duplicate time limit error during restart")
+                } else {
+                    // Real error - stop recording
+                    print("⚠️ Recognition error: \(error.localizedDescription)")
+
+                    // Safely stop the audio engine
+                    self.audioLock.lock()
+                    if let engine = self.audioEngine, engine.isRunning {
+                        engine.stop()
+                        let node = engine.inputNode
+                        if node.numberOfInputs > 0 {
+                            node.removeTap(onBus: 0)
+                        }
+                    }
+                    self.audioLock.unlock()
+
+                    self.recognitionRequest = nil
+                    self.recognitionTask = nil
+
+                    DispatchQueue.main.async {
+                        print("🛑 Stopping recording due to error")
                         self.isRecording = false
+                        self.isRestartingSession = false
+                        self.errorMessage = "Recognition error: \(error.localizedDescription)"
                     }
                 }
             }
         }
 
         isRecording = true
+
+        // Reset tracking variables for fresh recordings (not restarts)
+        if !isRestart {
+            lastPartialText = ""
+            lastSegmentCount = 0
+        }
+
         DispatchQueue.main.async { [weak self] in
             self?.errorMessage = nil
         }
@@ -245,8 +333,9 @@ class SpeechRecognizer: ObservableObject {
     func stopRecording(autoType: Bool = true) {
         audioLock.lock()
 
-        // Set flag first to prevent race conditions
+        // Set flags first to prevent race conditions
         isRecording = false
+        isRestartingSession = false
 
         // Stop audio engine first (no more input)
         if let audioEngine = audioEngine {
@@ -304,7 +393,10 @@ class SpeechRecognizer: ObservableObject {
                     DispatchQueue.main.async {
                         self.isUpdatingFromRecognition = true
                         self.transcribedText = ""
-                        self.baseText = ""
+                        self.fullTranscription = ""
+                        self.historicalResults = []
+                        self.lastPartialText = ""
+                        self.lastSegmentCount = 0
                         self.isUpdatingFromRecognition = false
                     }
                 }
@@ -400,7 +492,10 @@ class SpeechRecognizer: ObservableObject {
             guard let self = self else { return }
             self.isUpdatingFromRecognition = true
             self.transcribedText = ""
-            self.baseText = ""
+            self.fullTranscription = ""
+            self.historicalResults = []
+            self.lastPartialText = ""
+            self.lastSegmentCount = 0
             self.isUpdatingFromRecognition = false
 
             // Clear any error messages

@@ -38,8 +38,9 @@ In a world where most voice dictation services send your data to the cloud, Murm
 - ⚡ **Press-and-Hold**: Hold right ⌘ key to record, release to auto-type - it's that simple
 - 🎯 **Universal Input**: Automatically types into any application on your Mac
 - ✏️ **Live Editing**: Edit transcriptions in real-time while recording
-- 🌍 **Multi-Language**: Currently supports English and Spanish
+- 🌍 **Multi-Language**: Supports English, Spanish, and Portuguese
 - 🎤 **Native Quality**: Uses macOS native Speech Recognition for accurate results
+- 🗣️ **Continuous Speech**: Preserves all text across natural pauses when speaking multiple sentences
 - 🖱️ **Menu Bar App**: Lives quietly in your menu bar, always ready
 - ⚙️ **Flexible Modes**: Auto-type or manual copy - you choose the workflow
 

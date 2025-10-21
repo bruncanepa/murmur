@@ -62,9 +62,9 @@ class AccessibilityManager {
             return
         }
 
-        // Save current clipboard
+        // Save current clipboard DATA (not items, to avoid reuse issues)
         let pasteboard = NSPasteboard.general
-        let previousContents = pasteboard.pasteboardItems
+        let previousString = pasteboard.string(forType: .string)
 
         // Set our text to clipboard
         pasteboard.clearContents()
@@ -94,9 +94,9 @@ class AccessibilityManager {
 
         // Restore previous clipboard after a delay
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            if let items = previousContents {
+            if let previousString = previousString {
                 pasteboard.clearContents()
-                pasteboard.writeObjects(items)
+                pasteboard.setString(previousString, forType: .string)
             }
         }
     }

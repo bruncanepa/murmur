@@ -36,6 +36,11 @@ struct ContentView: View {
                 .font(.subheadline)
                 .disabled(speechRecognizer.isRecording)
 
+            // On-device recognition toggle
+            Toggle("On-device recognition (offline, more private)", isOn: $speechRecognizer.onDeviceRecognitionEnabled)
+                .font(.subheadline)
+                .disabled(speechRecognizer.isRecording)
+
             // Editable transcribed text
             TextEditor(text: $speechRecognizer.transcribedText)
                 .font(.body)
