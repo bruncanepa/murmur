@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Privacy-first voice dictation for macOS. All processing happens offline. Your voice never leaves your Mac.">
+    <meta name="theme-color" content="#667eea">
+    <title>Murmur - Privacy-First Voice Dictation for macOS</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="Assets/AppIcon.appiconset/icon_32x32@2x.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="Assets/AppIcon.appiconset/icon_16x16@2x.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="Assets/AppIcon.appiconset/icon_512x512.png">
+
+    <!-- Resource Hints for Performance -->
+    <link rel="preconnect" href="https://github.com" crossorigin>
+    <link rel="dns-prefetch" href="https://github.com">
+
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #800020;
+            --primary-dark: #5c0015;
+            --dark: #1e293b;
+            --dark-lighter: white;
+            --gray: #64748b;
+            --light-gray: #cbd5e1;
+            --bg-light: #f8fafc;
+            --success: #10b981;
+            --text: #0f172a;
+            --text-light: #475569;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        p {
+            font-size: 1.125rem;
+            color: var(--text-light);
+            margin-bottom: 1rem;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Navigation */
+        nav {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            padding: 1rem 0;
+            will-change: transform;
+        }
+
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+            text-decoration: none;
+        }
+
+        .logo img {
+            width: 32px;
+            height: 32px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-light);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #9b1b30 0%, #5c0015 100%);
+            color: white;
+            padding: 6rem 0;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .hero .subtitle {
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.95);
+            margin-bottom: 3rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero .requirements {
+            color: white;
+            margin-top: 2rem;
+            font-size: 1rem;
+        }
+
+        .hero .requirements strong {
+            color: white;
+        }
+
+        .hero-demo {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 2rem;
+            max-width: 700px;
+            margin: 3rem auto 3rem;
+            text-align: left;
+            will-change: backdrop-filter;
+        }
+
+        .demo-step {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 1.125rem;
+        }
+
+        .demo-step:last-child {
+            margin-bottom: 0;
+        }
+
+        .step-number {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem 2rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: white;
+            color: var(--primary);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 25px -5px rgb(0 0 0 / 0.15);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-secondary:hover {
+            background: white;
+            color: var(--primary);
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Problem Section */
+        .problem {
+            padding: 5rem 0;
+            background: var(--bg-light);
+            content-visibility: auto;
+            contain-intrinsic-size: auto 600px;
+        }
+
+        .problem-content {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .problem h2 {
+            color: var(--dark);
+        }
+
+        .problem .highlight {
+            background: linear-gradient(135deg, #9b1b30 0%, #5c0015 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+
+        .problem-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .stat {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            contain: layout style paint;
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat h3 {
+            color: var(--primary);
+            font-size: 1.25rem;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 5rem 0;
+            content-visibility: auto;
+            contain-intrinsic-size: auto 800px;
+        }
+
+        .features h2 {
+            text-align: center;
+            color: var(--dark);
+            margin-bottom: 3rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+            contain: layout style paint;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary);
+            will-change: transform;
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .feature-card h3 {
+            color: var(--dark);
+            margin-bottom: 1rem;
+        }
+
+        .feature-card p {
+            color: var(--text-light);
+            font-size: 1rem;
+        }
+
+        /* How It Works Section */
+        .how-it-works {
+            padding: 5rem 0;
+            background: var(--bg-light);
+            content-visibility: auto;
+            contain-intrinsic-size: auto 600px;
+        }
+
+        .how-it-works h2 {
+            text-align: center;
+            color: var(--dark);
+            margin-bottom: 3rem;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .step-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            position: relative;
+            box-shadow: var(--shadow);
+            contain: layout style paint;
+        }
+
+        .step-card::after {
+            content: '→';
+            position: absolute;
+            right: -1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 2rem;
+            color: var(--primary);
+        }
+
+        .step-card:last-child::after {
+            display: none;
+        }
+
+        .step-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .step-card h3 {
+            color: var(--dark);
+            margin-bottom: 1rem;
+        }
+
+        /* Privacy Section */
+        .privacy {
+            padding: 5rem 0;
+            background: white;
+            color: var(--text);
+            content-visibility: auto;
+            contain-intrinsic-size: auto 700px;
+        }
+
+        .privacy h2 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--dark);
+        }
+
+        .privacy-intro {
+            text-align: center;
+            font-size: 1.25rem;
+            max-width: 800px;
+            margin: 0 auto 3rem;
+            color: var(--text-light);
+        }
+
+        .privacy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .privacy-item {
+            display: flex;
+            align-items: start;
+            gap: 1rem;
+            contain: layout style;
+        }
+
+        .privacy-item .icon {
+            font-size: 1.5rem;
+            color: var(--success);
+            flex-shrink: 0;
+        }
+
+        .privacy-item h3 {
+            color: var(--dark);
+            font-size: 1.125rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .privacy-item p {
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+
+        .privacy-footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            font-size: 1rem;
+            color: var(--text-light);
+        }
+
+        /* CTA Section */
+        .cta {
+            padding: 5rem 0;
+            background: linear-gradient(135deg, #9b1b30 0%, #5c0015 100%);
+            color: white;
+            text-align: center;
+            content-visibility: auto;
+            contain-intrinsic-size: auto 400px;
+        }
+
+        .cta h2 {
+            margin-bottom: 1rem;
+        }
+
+        .cta p {
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .cta .requirements {
+            margin-top: 2rem;
+            font-size: 1rem;
+            color: white;
+            font-weight: 500;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--bg-light);
+            color: var(--text);
+            padding: 3rem 0 2rem;
+            content-visibility: auto;
+            contain-intrinsic-size: auto 500px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section {
+            contain: layout style;
+        }
+
+        .footer-section p {
+            color: var(--text-light);
+        }
+
+        .footer-section h3 {
+            color: var(--dark);
+            margin-bottom: 1rem;
+            font-size: 1.125rem;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 0.5rem;
+            color: var(--text-light);
+        }
+
+        .footer-section a {
+            color: var(--text);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer-section a:hover {
+            color: var(--primary);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid var(--border);
+            padding-top: 2rem;
+            text-align: center;
+            font-size: 0.95rem;
+            color: var(--text-light);
+        }
+
+        .footer-bottom p {
+            color: var(--text-light);
+        }
+
+        .footer-bottom em {
+            color: var(--text-light);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            h2 {
+                font-size: 2rem;
+            }
+
+            .hero {
+                padding: 4rem 0;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero .subtitle {
+                font-size: 1.25rem;
+            }
+
+            .nav-links {
+                gap: 1rem;
+            }
+
+            .features-grid,
+            .steps {
+                grid-template-columns: 1fr;
+            }
+
+            .step-card::after {
+                display: none;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+
+        /* Accessibility */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--primary);
+            color: white;
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            z-index: 100;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* Smooth Scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Link Styles */
+        a {
+            color: var(--primary);
+        }
+
+        a:hover {
+            color: var(--primary-dark);
+        }
+    </style>
+</head>
+<body>
+    <a href="#main" class="skip-link">Skip to main content</a>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="container">
+            <a href="#" class="logo">
+                <img src="Assets/AppIcon.appiconset/icon_128x128.png" alt="Murmur Icon">
+                <span>Murmur</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#privacy">Privacy</a></li>
+                <li><a href="https://github.com/bruncanepa/murmur" target="_blank">GitHub</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="main">
+        <div class="container">
+            <h1>Your Voice, Your Mac, Your Privacy</h1>
+            <p class="subtitle">
+                Privacy-first voice dictation that runs completely offline.
+                All processing happens locally - no internet, no tracking, no data collection.
+            </p>
+
+            <div class="hero-demo">
+                <div class="demo-step">
+                    <span class="step-number">1</span>
+                    <span>Press and hold the right ⌘ key</span>
+                </div>
+                <div class="demo-step">
+                    <span class="step-number">2</span>
+                    <span>Speak naturally - your words appear in real-time</span>
+                </div>
+                <div class="demo-step">
+                    <span class="step-number">3</span>
+                    <span>Release the key - text instantly appears where you need it</span>
+                </div>
+            </div>
+
+            <div class="cta-buttons">
+                <a href="https://github.com/bruncanepa/murmur/releases/download/v1.0.0/Murmur-1.0.0.dmg" class="btn btn-primary" target="_blank">Download for macOS</a>
+                <a href="https://github.com/bruncanepa/murmur" class="btn btn-secondary">View on GitHub</a>
+            </div>
+
+            <p class="requirements"><strong>Requires macOS 13.0 (Ventura) or later</strong></p>
+        </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section class="problem">
+        <div class="container">
+            <div class="problem-content">
+                <h2>Most Voice Dictation Tools Have a <span class="highlight">Privacy Problem</span></h2>
+                <p style="font-size: 1.25rem; margin-top: 1.5rem;">
+                    Your voice is sent to cloud servers, analyzed by AI systems, and stored who-knows-where.
+                    Every word you speak becomes part of a data profile.
+                </p>
+            </div>
+
+            <div class="problem-stats">
+                <div class="stat">
+                    <div class="stat-icon">☁️</div>
+                    <h3>Cloud Processing</h3>
+                    <p>Most tools send your voice to external servers for processing</p>
+                </div>
+                <div class="stat">
+                    <div class="stat-icon">📊</div>
+                    <h3>Data Collection</h3>
+                    <p>Your voice data is often used to improve AI models and analytics</p>
+                </div>
+                <div class="stat">
+                    <div class="stat-icon">🌐</div>
+                    <h3>Internet Required</h3>
+                    <p>Can't work offline, leaving you stranded without connection</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <h2>Built for Privacy, Designed for Speed</h2>
+            <p style="text-align: center; max-width: 700px; margin: 0 auto 2rem; font-size: 1.25rem;">
+                Murmur gives you powerful voice dictation without compromising your privacy
+            </p>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">🔒</span>
+                    <h3>100% Private</h3>
+                    <p>All processing happens locally on your Mac. Your voice never leaves your device. Zero telemetry, zero tracking, zero cloud services.</p>
+                </div>
+
+                <div class="feature-card">
+                    <span class="feature-icon">⚡</span>
+                    <h3>Lightning Fast</h3>
+                    <p>Press-and-hold the right ⌘ key to record, release to auto-type. No delays, no menus, no friction - it just works.</p>
+                </div>
+
+                <div class="feature-card">
+                    <span class="feature-icon">🎯</span>
+                    <h3>Universal Input</h3>
+                    <p>Works in any application on your Mac - browsers, email, Slack, VS Code, anywhere you can type text.</p>
+                </div>
+
+                <div class="feature-card">
+                    <span class="feature-icon">✏️</span>
+                    <h3>Live Editing</h3>
+                    <p>Edit your transcription in real-time while still recording. Make corrections on the fly as you speak.</p>
+                </div>
+
+                <div class="feature-card">
+                    <span class="feature-icon">🌍</span>
+                    <h3>Multi-Language</h3>
+                    <p>Supports English, Spanish, and Portuguese with Apple's native Speech Recognition for accurate results.</p>
+                </div>
+
+                <div class="feature-card">
+                    <span class="feature-icon">📴</span>
+                    <h3>Works Offline</h3>
+                    <p>No internet required. Murmur works perfectly on airplanes, in coffee shops, or anywhere without connection.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="container">
+            <h2>Simple as 1-2-3</h2>
+
+            <div class="steps">
+                <div class="step-card">
+                    <div class="step-icon">👆</div>
+                    <h3>Press & Hold</h3>
+                    <p>Click in any text field, then press and hold the right ⌘ (Command) key to start recording</p>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-icon">🗣️</div>
+                    <h3>Speak Naturally</h3>
+                    <p>Talk normally and watch your words appear in real-time. Edit as you go if needed.</p>
+                </div>
+
+                <div class="step-card">
+                    <div class="step-icon">✨</div>
+                    <h3>Release & Done</h3>
+                    <p>Release the key and your transcribed text instantly appears exactly where you need it</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Privacy Section -->
+    <section class="privacy" id="privacy">
+        <div class="container">
+            <h2>Privacy You Can Verify</h2>
+            <p class="privacy-intro">
+                We don't just claim to be private - we prove it. Every line of code is open source
+                and built with privacy as the foundation, not an afterthought.
+            </p>
+
+            <div class="privacy-grid">
+                <div class="privacy-item">
+                    <span class="icon">✅</span>
+                    <div>
+                        <h3>Zero Network Requests</h3>
+                        <p>Murmur works completely offline. Not a single byte of data leaves your Mac.</p>
+                    </div>
+                </div>
+
+                <div class="privacy-item">
+                    <span class="icon">✅</span>
+                    <div>
+                        <h3>Zero Telemetry</h3>
+                        <p>No analytics, no crash reports, no "anonymous" data collection of any kind.</p>
+                    </div>
+                </div>
+
+                <div class="privacy-item">
+                    <span class="icon">✅</span>
+                    <div>
+                        <h3>Zero Cloud Services</h3>
+                        <p>Your voice is processed entirely by Apple's on-device Speech Recognition framework.</p>
+                    </div>
+                </div>
+
+                <div class="privacy-item">
+                    <span class="icon">✅</span>
+                    <div>
+                        <h3>Zero Local Storage</h3>
+                        <p>Transcriptions exist only in memory. Nothing is saved to disk.</p>
+                    </div>
+                </div>
+
+                <div class="privacy-item">
+                    <span class="icon">✅</span>
+                    <div>
+                        <h3>Open Source</h3>
+                        <p>Review every line of code. Build it yourself. No hidden functionality.</p>
+                    </div>
+                </div>
+
+                <div class="privacy-item">
+                    <span class="icon">✅</span>
+                    <div>
+                        <h3>Native Technology</h3>
+                        <p>Uses only Apple's frameworks - Speech, SwiftUI, AVFoundation. No third-party dependencies.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="privacy-footer">
+                <p>
+                    <strong>Open Source License:</strong> MIT License - Review the code, audit security, build from source<br>
+                    <a href="https://github.com/bruncanepa/murmur" style="color: var(--primary);">View Security Policy on GitHub →</a>
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="container">
+            <h2>Start Dictating Privately Today</h2>
+            <p>Free, open source, and ready to use in seconds</p>
+
+            <div class="cta-buttons">
+                <a href="https://github.com/bruncanepa/murmur/releases/download/v1.0.0/Murmur-1.0.0.dmg" class="btn btn-primary" target="_blank">Download for macOS</a>
+                <a href="https://github.com/bruncanepa/murmur" class="btn btn-secondary">View on GitHub</a>
+            </div>
+
+            <div class="requirements">
+                <p><strong>Requirements:</strong> macOS 13.0 (Ventura) or later | Swift 5.9+</p>
+                <p>Permissions needed: Microphone, Speech Recognition, Accessibility</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Murmur</h3>
+                    <p>Privacy-first voice dictation for macOS. Your voice stays on your Mac.</p>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Resources</h3>
+                    <ul>
+                        <li><a href="https://github.com/bruncanepa/murmur">GitHub Repository</a></li>
+                        <li><a href="https://github.com/bruncanepa/murmur/issues">Report Issues</a></li>
+                        <li><a href="https://github.com/bruncanepa/murmur/blob/main/CONTRIBUTING.md">Contributing Guide</a></li>
+                        <li><a href="https://github.com/bruncanepa/murmur/blob/main/BUILD.md">Build Documentation</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Legal</h3>
+                    <ul>
+                        <li><a href="https://github.com/bruncanepa/murmur/blob/main/LICENSE">MIT License</a></li>
+                        <li><a href="https://github.com/bruncanepa/murmur/blob/main/SECURITY.md">Privacy Policy</a></li>
+                        <li><a href="https://github.com/bruncanepa/murmur/blob/main/SECURITY.md">Security Policy</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Technology</h3>
+                    <ul>
+                        <li>Apple Speech Framework</li>
+                        <li>SwiftUI</li>
+                        <li>AVFoundation</li>
+                        <li>Built with Swift</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>
+                    &copy; 2025 Murmur - Made with ❤️ for privacy-conscious Mac users<br>
+                    <em>Because your voice is yours, and it should stay that way.</em>
+                </p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
