@@ -1,5 +1,6 @@
 <div align="center">
-  <h1>🎙️ Murmur</h1>
+  <img src="Assets/AppIcon.appiconset/icon_512x512.png" alt="Murmur Icon" width="128" height="128">
+  <h1>Murmur</h1>
   <p>Privacy-first voice dictation for macOS that runs completely offline</p>
 
   [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -38,15 +39,12 @@ In a world where most voice dictation services send your data to the cloud, Murm
 
 ## Features
 
-- 🔒 **100% Private**: All processing happens locally - no internet, no tracking, no data collection
-- ⚡ **Press-and-Hold**: Hold right ⌘ key to record, release to auto-type - it's that simple
-- 🎯 **Universal Input**: Automatically types into any application on your Mac
-- ✏️ **Live Editing**: Edit transcriptions in real-time while recording
-- 🌍 **Multi-Language**: Supports English, Spanish, and Portuguese
-- 🎤 **Native Quality**: Uses macOS native Speech Recognition for accurate results
-- 🗣️ **Continuous Speech**: Preserves all text across natural pauses when speaking multiple sentences
-- 🖱️ **Menu Bar App**: Lives quietly in your menu bar, always ready
-- ⚙️ **Flexible Modes**: Auto-type or manual copy - you choose the workflow
+- 🔒 **100% Private**: All processing happens locally on your Mac. Your voice never leaves your device. Zero telemetry, zero tracking, zero cloud services
+- ⚡ **Lightning Fast**: Press-and-hold the right ⌘ key to record, release to auto-type. No delays, no menus, no friction - it just works
+- 🎯 **Universal Input**: Works in any application on your Mac - browsers, email, Slack, VS Code, anywhere you can type text
+- ✏️ **Live Editing**: Edit your transcription in real-time while still recording. Make corrections on the fly as you speak
+- 🌍 **Multi-Language**: Supports English, Spanish, and Portuguese with Apple's native Speech Recognition for accurate results
+- 📴 **Works Offline**: No internet required. Murmur works perfectly on airplanes, in coffee shops, or anywhere without connection
 
 ![Murmur App Interface](Assets/murmur-app-window.png)
 
@@ -216,40 +214,16 @@ Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTIN
 
 Built with native macOS technologies to ensure maximum privacy, performance, and reliability.
 
-## Pricing & Support
+## Support
 
 **Murmur is free, open source, and always will be.** All features are available to everyone at no cost.
 
-### Support Development
+If you find Murmur valuable and want to support the project:
 
-If you find Murmur valuable and want to support continued development:
-
-- ❤️ **GitHub Sponsors**: [Become a sponsor](https://github.com/sponsors) (recommended)
-- 💰 **Pay what feels fair**: $5 (Coffee) • $29 (Recommended) • $50 (Generous) • Your choice
 - ⭐ **Star the repo**: Help others discover Murmur on GitHub
 - 🐛 **Bug reports**: [Open an issue](https://github.com/bruncanepa/murmur/issues)
 - 💡 **Feature requests**: [Open an issue](https://github.com/bruncanepa/murmur/issues)
-
-**Where your support goes:**
-- 60% - Development time (coding, testing, support)
-- 20% - Apple Developer account & code signing
-- 20% - Infrastructure (domain, CDN, tools)
-
-See our [detailed pricing section](index.html#pricing) for more information.
-
-### Future: Pro Features
-
-We're planning optional Pro features (~$29 one-time) as **separate plugins**:
-
-- 📜 **Transcription history** - Searchable archive with export to CSV/MD/TXT
-- 📖 **Personal dictionary** - 10,000+ custom words and abbreviations
-- 🤖 **Local AI cleanup** - Filler word removal, smart punctuation (100% offline)
-- ⚡ **Voice shortcuts** - Trigger custom text snippets with voice commands
-- ⚙️ **Custom hotkeys** - Fully customizable trigger keys
-
-**The base app will always remain free and fully functional.** Pro features will be optional closed-source plugins that enhance, not replace, the open-source core. Estimated launch: Q2 2025.
-
-Learn more about our [pricing philosophy](index.html#pricing) and why we believe privacy-first software can be sustainable without compromising values.
+- 🤝 **Contributions**: Check out our [Contributing Guidelines](CONTRIBUTING.md)
 
 ## License
 
