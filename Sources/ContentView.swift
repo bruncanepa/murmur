@@ -8,7 +8,7 @@ struct ContentView: View {
             // Status indicator
             HStack {
                 Circle()
-                    .fill(speechRecognizer.isRecording ? Color.red : Color.gray)
+                    .fill(speechRecognizer.isRecording ? Color.red : Color.green)
                     .frame(width: 12, height: 12)
 
                 Text(speechRecognizer.isRecording ? "Recording..." : "Ready")
@@ -31,15 +31,21 @@ struct ContentView: View {
                 .disabled(speechRecognizer.isRecording)
             }
 
-            // Auto-type toggle
-            Toggle("Auto-type to active app", isOn: $speechRecognizer.autoTypeEnabled)
-                .font(.subheadline)
-                .disabled(speechRecognizer.isRecording)
+            // Auto-type toggle - left aligned
+            HStack {
+                Toggle("Auto-type to active app", isOn: $speechRecognizer.autoTypeEnabled)
+                    .font(.subheadline)
+                    .disabled(speechRecognizer.isRecording)
+                Spacer()
+            }
 
-            // On-device recognition toggle
-            Toggle("On-device recognition (offline, more private)", isOn: $speechRecognizer.onDeviceRecognitionEnabled)
-                .font(.subheadline)
-                .disabled(speechRecognizer.isRecording)
+            // On-device recognition toggle - left aligned
+            HStack {
+                Toggle("On-device recognition (offline, more private)", isOn: $speechRecognizer.onDeviceRecognitionEnabled)
+                    .font(.subheadline)
+                    .disabled(speechRecognizer.isRecording)
+                Spacer()
+            }
 
             // Editable transcribed text
             TextEditor(text: $speechRecognizer.transcribedText)
@@ -87,20 +93,24 @@ struct ContentView: View {
                 .buttonStyle(.bordered)
             }
 
-            // Quit button
-            HStack {
-                Spacer()
-
-                Button("Quit Murmur") {
+            // Quit button and version - centered vertically
+            VStack(spacing: 4) {
+                // Quit button - centered
+                Button("Quit") {
                     NSApplication.shared.terminate(nil)
                 }
-                .buttonStyle(.borderless)
-                .foregroundColor(.secondary)
-                .font(.caption)
+                .buttonStyle(.bordered)
+                .controlSize(.small)
                 .disabled(speechRecognizer.isRecording)
 
-                Spacer()
+                // Version info - centered below quit button
+                if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
+                    Text("v\(version)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
             }
+            .frame(maxWidth: .infinity)
 
             // Permission status
             if let error = speechRecognizer.errorMessage {

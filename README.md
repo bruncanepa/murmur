@@ -14,6 +14,10 @@
     <a href="#building">Building</a> •
     <a href="#contributing">Contributing</a>
   </p>
+
+  <p>
+    <strong>🌐 <a href="index.html">Visit website</a></strong>
+  </p>
 </div>
 
 ---
@@ -44,9 +48,31 @@ In a world where most voice dictation services send your data to the cloud, Murm
 - 🖱️ **Menu Bar App**: Lives quietly in your menu bar, always ready
 - ⚙️ **Flexible Modes**: Auto-type or manual copy - you choose the workflow
 
+![Murmur App Interface](Assets/murmur-app-window.png)
+
+
 ## Quick Start
 
-### Installation
+### Download & Install
+
+**Option 1: Direct Download (Easiest)**
+
+```bash
+# Download and install with curl (bypasses macOS Gatekeeper)
+curl -L -o Murmur.dmg https://github.com/bruncanepa/murmur/releases/latest/download/Murmur-1.0.0.dmg
+open Murmur.dmg
+# Drag Murmur.app to Applications folder
+```
+
+**Option 2: GitHub Releases**
+
+1. Go to [Releases](https://github.com/bruncanepa/murmur/releases/latest)
+2. Download `Murmur-X.X.X.dmg`
+3. Open the DMG file
+4. Drag Murmur.app to Applications folder
+5. **First launch**: Right-click Murmur.app → "Open" (to bypass unidentified developer warning)
+
+**Option 3: Build from Source**
 
 ```bash
 # Clone the repository
@@ -64,6 +90,8 @@ cd murmur
 3. Grant **Accessibility** permission when prompted (required for auto-typing)
 4. Look for the waveform icon 🌊 in your menu bar
 5. You're ready to go!
+
+> **Note**: Murmur is not notarized by Apple. On first launch, you may need to right-click the app and select "Open" to bypass the security warning. This is only needed once.
 
 ## Usage
 
@@ -113,9 +141,15 @@ cd murmur
 
 **Manual build:**
 ```bash
-./build-app.sh --dev    # Development
-./build-app.sh --prod   # Production
-open Murmur-Dev.app     # or Murmur.app
+./build-app.sh --dev                    # Development
+./build-app.sh --prod --version 1.0.0   # Production with version
+open Murmur-Dev.app                     # or Murmur.app
+```
+
+**Create DMG installer:**
+```bash
+./build-app.sh --prod --version 1.0.0   # Build first
+./create-dmg-installer.sh --version 1.0.0  # Create DMG
 ```
 
 **For development in Xcode:**
@@ -167,8 +201,11 @@ Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTIN
 
 ## Documentation
 
+- [Landing Page](index.html) - Marketing website for Murmur
 - [Contributing Guidelines](CONTRIBUTING.md) - How to contribute to Murmur
 - [Security Policy](SECURITY.md) - Our privacy and security principles
+- [Build Documentation](BUILD.md) - Detailed build instructions
+- [Scripts Reference](SCRIPTS.md) - Development scripts overview
 
 ## Acknowledgments
 
@@ -179,11 +216,40 @@ Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTIN
 
 Built with native macOS technologies to ensure maximum privacy, performance, and reliability.
 
-## Support
+## Pricing & Support
 
+**Murmur is free, open source, and always will be.** All features are available to everyone at no cost.
+
+### Support Development
+
+If you find Murmur valuable and want to support continued development:
+
+- ❤️ **GitHub Sponsors**: [Become a sponsor](https://github.com/sponsors) (recommended)
+- 💰 **Pay what feels fair**: $5 (Coffee) • $29 (Recommended) • $50 (Generous) • Your choice
+- ⭐ **Star the repo**: Help others discover Murmur on GitHub
 - 🐛 **Bug reports**: [Open an issue](https://github.com/bruncanepa/murmur/issues)
 - 💡 **Feature requests**: [Open an issue](https://github.com/bruncanepa/murmur/issues)
-- 📖 **Questions**: Check existing issues or open a new one
+
+**Where your support goes:**
+- 60% - Development time (coding, testing, support)
+- 20% - Apple Developer account & code signing
+- 20% - Infrastructure (domain, CDN, tools)
+
+See our [detailed pricing section](index.html#pricing) for more information.
+
+### Future: Pro Features
+
+We're planning optional Pro features (~$29 one-time) as **separate plugins**:
+
+- 📜 **Transcription history** - Searchable archive with export to CSV/MD/TXT
+- 📖 **Personal dictionary** - 10,000+ custom words and abbreviations
+- 🤖 **Local AI cleanup** - Filler word removal, smart punctuation (100% offline)
+- ⚡ **Voice shortcuts** - Trigger custom text snippets with voice commands
+- ⚙️ **Custom hotkeys** - Fully customizable trigger keys
+
+**The base app will always remain free and fully functional.** Pro features will be optional closed-source plugins that enhance, not replace, the open-source core. Estimated launch: Q2 2025.
+
+Learn more about our [pricing philosophy](index.html#pricing) and why we believe privacy-first software can be sustainable without compromising values.
 
 ## License
 

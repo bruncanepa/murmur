@@ -1,0 +1,22 @@
+<!-- Murmur Menu Bar Icon - Template Mode -->
+<!-- "M" shaped waveform matching the app icon design -->
+<svg width="22" height="22" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+  <!-- Template mode: black shapes become menu bar color automatically -->
+  <!-- macOS adjusts for light/dark mode -->
+
+  <!-- "M" shaped waveform (5 bars) matching app icon pattern -->
+  <!-- Left tall bar (left peak of M) -->
+  <rect x="1" y="4" width="3.5" height="14" rx="1.75" fill="black"/>
+
+  <!-- Left-center connecting bar (smaller) -->
+  <rect x="5.5" y="8" width="2.5" height="4" rx="1.25" fill="black"/>
+
+  <!-- Center bar (middle peak of M - taller than connectors) -->
+  <rect x="9" y="6" width="3" height="9" rx="1.5" fill="black"/>
+
+  <!-- Right-center connecting bar (smaller) -->
+  <rect x="13" y="8" width="2.5" height="4" rx="1.25" fill="black"/>
+
+  <!-- Right tall bar (right peak of M) -->
+  <rect x="17.5" y="4" width="3.5" height="14" rx="1.75" fill="black"/>
+</svg>

@@ -2,19 +2,39 @@
 
 # Build Murmur macOS app bundle with proper entitlements
 # Usage:
-#   ./build-app.sh           - Build in development mode (default)
-#   ./build-app.sh --dev     - Build in development mode
-#   ./build-app.sh --prod    - Build in production mode
+#   ./build-app.sh                      - Build in development mode (default)
+#   ./build-app.sh --dev                - Build in development mode
+#   ./build-app.sh --prod               - Build in production mode
+#   ./build-app.sh --prod --version 1.0.0  - Build production with version
 
 set -e
 
-# Parse mode flag
+# Default version
+VERSION="1.0.0"
+
+# Parse arguments
 MODE="dev"
-if [[ "$1" == "--prod" ]]; then
-    MODE="prod"
-elif [[ "$1" == "--dev" ]]; then
-    MODE="dev"
-fi
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --prod)
+            MODE="prod"
+            shift
+            ;;
+        --dev)
+            MODE="dev"
+            shift
+            ;;
+        --version)
+            VERSION="$2"
+            shift 2
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Usage: $0 [--dev|--prod] [--version VERSION]"
+            exit 1
+            ;;
+    esac
+done
 
 # Set variables based on mode
 if [[ "$MODE" == "prod" ]]; then
@@ -44,6 +64,12 @@ mkdir -p "$APP_NAME/Contents/Resources"
 # Copy binary
 cp .build/$BUILD_CONFIG/Murmur "$APP_NAME/Contents/MacOS/"
 
+# Copy app icon and menu bar icon
+echo "Copying app icons..."
+cp Assets/AppIcon.icns "$APP_NAME/Contents/Resources/"
+cp Assets/MenuBarIcon.png "$APP_NAME/Contents/Resources/"
+cp Assets/MenuBarIcon@2x.png "$APP_NAME/Contents/Resources/"
+
 # Create Info.plist with dynamic values
 cat > "$APP_NAME/Contents/Info.plist" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -63,9 +89,11 @@ cat > "$APP_NAME/Contents/Info.plist" << EOF
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
+    <string>$VERSION</string>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>$VERSION</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
     <key>LSUIElement</key>
@@ -89,6 +117,7 @@ echo ""
 echo "✅ Build complete!"
 echo ""
 echo "App: $APP_NAME"
+echo "Version: $VERSION"
 echo "Bundle ID: $BUNDLE_ID"
 echo "Build Config: $BUILD_CONFIG"
 echo ""
@@ -98,5 +127,8 @@ echo ""
 if [[ "$MODE" == "prod" ]]; then
     echo "To install to Applications:"
     echo "  cp -r $APP_NAME /Applications/"
+    echo ""
+    echo "To create DMG installer:"
+    echo "  ./create-dmg-installer.sh"
     echo ""
 fi

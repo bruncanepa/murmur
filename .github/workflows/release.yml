@@ -1,0 +1,158 @@
+# GitHub Actions Workflow: Automated Release Pipeline
+#
+# This workflow automates the complete release process for Murmur:
+# 1. Builds production macOS app
+# 2. Creates distributable DMG installer
+# 3. Publishes GitHub Release with DMG download
+#
+# Triggered by: Pushing version tags (e.g., git tag v1.0.0 && git push origin v1.0.0)
+
+name: Release
+
+# TRIGGER: This workflow runs when you push a tag matching the pattern v*.*.* (semantic versioning)
+# Example tags that trigger this: v1.0.0, v1.2.3, v2.0.0-beta
+# To trigger: git tag v1.0.0 && git push origin v1.0.0
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Matches any tag starting with 'v' followed by semantic version (e.g., v1.0.0)
+
+jobs:
+  build-and-release:
+    # RUNNER: Uses GitHub's macOS runner (latest version)
+    # This provides a clean macOS environment with Xcode and build tools pre-installed
+    # GitHub provides this for free for public repositories
+    runs-on: macos-latest
+
+    steps:
+      # STEP 1: Clone the repository
+      # This checks out your code at the specific tag that triggered the workflow
+      - name: Checkout code
+        uses: actions/checkout@v4  # Official GitHub action for checking out code
+
+      # STEP 2: Set up Swift compiler
+      # Ensures we have the correct Swift version (5.9) for building
+      # This step may be optional as macos-latest usually includes recent Swift
+      - name: Set up Swift
+        uses: swift-actions/setup-swift@v2  # Community action for Swift setup
+        with:
+          swift-version: '5.9'  # Matches the Swift version required by Murmur
+
+      # STEP 3: Extract version number from the Git tag
+      # Converts "refs/tags/v1.0.0" → "1.0.0" (removes the 'v' prefix)
+      # This version is stored in GITHUB_OUTPUT for use in subsequent steps
+      - name: Extract version from tag
+        id: get_version  # ID allows other steps to reference this step's outputs
+        run: |
+          # Remove "refs/tags/v" prefix from GITHUB_REF to get clean version number
+          # Example: refs/tags/v1.0.0 → 1.0.0
+          VERSION=${GITHUB_REF#refs/tags/v}
+
+          # Save VERSION to GITHUB_OUTPUT so other steps can access it via ${{ steps.get_version.outputs.VERSION }}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+          # Print to workflow log for debugging
+          echo "Building version: $VERSION"
+
+      # STEP 4: Build the production macOS app
+      # Runs your build-app.sh script with production flag and version number
+      # Creates optimized release binary in Murmur.app bundle
+      - name: Build production app
+        run: |
+          # Call build script with:
+          # --prod: Build in release mode (optimized, no debug symbols)
+          # --version: Set app version in Info.plist
+          ./build-app.sh --prod --version ${{ steps.get_version.outputs.VERSION }}
+
+      # STEP 5: Create DMG installer
+      # Packages the built app into a user-friendly DMG file
+      # DMG includes custom icon and Applications symlink for easy installation
+      - name: Create DMG installer
+        run: |
+          # Call DMG creation script with version number
+          # Output: Murmur-1.0.0.dmg (ready for distribution)
+          ./create-dmg-installer.sh --version ${{ steps.get_version.outputs.VERSION }}
+
+      # STEP 6: Verify DMG was created successfully
+      # Safety check to ensure the DMG file exists before attempting to upload
+      # Will fail the workflow if DMG creation had issues
+      - name: Verify DMG was created
+        run: |
+          # List the DMG file with human-readable size (-lh flag)
+          # If file doesn't exist, this step fails and stops the workflow
+          ls -lh Murmur-${{ steps.get_version.outputs.VERSION }}.dmg
+
+      # STEP 7: Generate release notes
+      # Creates a markdown file with installation instructions and requirements
+      # This will be the description shown on the GitHub Release page
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          # Create release_notes.md with heredoc (<<'EOF')
+          # This file contains user-facing installation instructions
+          cat > release_notes.md << 'EOF'
+          ## Installation
+
+          **Option 1: Direct Download (Easiest)**
+
+          ```bash
+          # Download and install with curl (bypasses macOS Gatekeeper)
+          curl -L -o Murmur.dmg https://github.com/${{ github.repository }}/releases/download/v${{ steps.get_version.outputs.VERSION }}/Murmur-${{ steps.get_version.outputs.VERSION }}.dmg
+          open Murmur.dmg
+          # Drag Murmur.app to Applications folder
+          ```
+
+          **Option 2: Manual Install**
+
+          1. Download `Murmur-${{ steps.get_version.outputs.VERSION }}.dmg` below
+          2. Open the DMG file
+          3. Drag Murmur.app to Applications folder
+          4. **First launch**: Right-click Murmur.app → "Open" (to bypass unidentified developer warning)
+
+          ## Requirements
+
+          - macOS 13.0 (Ventura) or later
+          - Microphone, Speech Recognition, and Accessibility permissions
+
+          ## What's New
+
+          See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for detailed changes.
+
+          ---
+
+          **Note**: Murmur is not notarized by Apple. On first launch, you may need to right-click and select "Open". This is only needed once.
+          EOF
+
+          echo "Release notes generated"
+
+      # STEP 8: Create GitHub Release
+      # This is the main step that publishes the release to GitHub
+      # Uses the popular softprops/action-gh-release action
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1  # Community action for creating GitHub releases
+        with:
+          # Upload the DMG file as a release asset (users can download this)
+          files: Murmur-${{ steps.get_version.outputs.VERSION }}.dmg
+
+          # Use the generated release notes as the release description
+          body_path: release_notes.md
+
+          # draft: false means the release is published immediately
+          # Set to true if you want to review before publishing
+          draft: false
+
+          # prerelease: false means this is a stable release
+          # Set to true for alpha/beta releases
+          prerelease: false
+        env:
+          # GITHUB_TOKEN is automatically provided by GitHub Actions
+          # No need to create this secret - it's available in all workflows
+          # This token has permissions to create releases in your repository
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # STEP 9: Print success message
+      # Logs the release URL for easy access from the workflow logs
+      - name: Release complete
+        run: |
+          echo "✅ Release v${{ steps.get_version.outputs.VERSION }} published!"
+          echo "🔗 https://github.com/${{ github.repository }}/releases/tag/v${{ steps.get_version.outputs.VERSION }}"

@@ -19,7 +19,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "waveform", accessibilityDescription: "Murmur")
+            // Load custom menu bar icon (simple waveform design)
+            if let menuBarIconPath = Bundle.main.path(forResource: "MenuBarIcon", ofType: "png"),
+               let menuBarIcon = NSImage(contentsOfFile: menuBarIconPath) {
+                // Make it a template image so it follows system appearance (white/black)
+                menuBarIcon.isTemplate = true
+                button.image = menuBarIcon
+            } else {
+                // Fallback to system icon
+                button.image = NSImage(systemSymbolName: "waveform", accessibilityDescription: "Murmur")
+            }
             button.action = #selector(togglePopover)
             button.target = self
         }
